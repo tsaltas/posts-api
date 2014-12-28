@@ -85,19 +85,36 @@ def post_get(id):
 @app.route("/api/post/<int:id>", methods=["PUT"])
 @decorators.accept("application/json")
 def post_edit(id):
-    """ Edit an existing post """
+    """ Edit an existing post using either query string or JSON """
+
+    # Get the JSON data
+    data = request.json
     # Get the querystring arguments
     new_title = request.args.get("title")
     new_body = request.args.get("body")
 
+    # Check that the JSON supplied is valid
+    # If not, create an error message to return
+    try:
+        validate(data, post_schema)
+        err_message = False
+    except ValidationError as error:
+        err_message = {"message": error.message}
+    
     # Get the post from the database
     post = session.query(models.Post).get(id)
 
-    # Update the post with the new data
+    # Update the post with the new data, if any was supplied
+    # Otherwise return with error message and 422 Unprocessable Entity
     if new_title:
         post.title = new_title
     if new_body:
         post.body = new_body
+    elif err_message:
+        return Response(json.dumps(err_message), 422, mimetype="application/json")
+    else:
+        post.title=data["title"]
+        post.body=data["body"]
 
     # Update the post to the database
     session.add(post)

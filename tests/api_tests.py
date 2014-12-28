@@ -208,15 +208,14 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(post.title, "Example Post")
         self.assertEqual(post.body, "Just a test")
 
-    def testEditPost(self):
-        """ Editing an existing post """
+    def testEditPostString(self):
+        """ Editing an existing post using query string"""
         # Create a post to be edited and add to database
         post = models.Post(title="Example Post", body="To be edited")
 
         session.add(post)
         session.commit()
         
-        # Edit the post
         response = self.client.put("/api/post/{}?title=Edited+Example+Post&body=This+has+been+edited".format(post.id)
                                     , headers=[("Accept", "application/json")]
                                    )
@@ -225,14 +224,44 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.mimetype, "application/json")
 
         # Verify the post was updated in the database
-        response = self.client.get("/api/post/{}".format(post.id), headers=[("Accept", "application/json")])
+        posts = session.query(models.Post).all()
+        self.assertEqual(len(posts), 1)
+
+        post = posts[0]
+        self.assertEqual(post.title, "Edited Example Post")
+        self.assertEqual(post.body, "This has been edited")
+
+    def testEditPostJSON(self):
+        """ Editing an existing post using JSON """
+        # Create a post to be edited and add to database
+        post = models.Post(title="Example Post", body="To be edited")
+
+        session.add(post)
+        session.commit()
+        
+        # Edit the post
+        # Edit the post
+        data = {
+            "title": "Edited Example Post",
+            "body": "This has been edited"
+        }
+
+        response = self.client.put("/api/post/{}".format(post.id), 
+                                    data=json.dumps(data),
+                                    content_type="application/json",
+                                    headers=[("Accept", "application/json")]
+                                    )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.mimetype, "application/json")
 
-        post = json.loads(response.data)
-        self.assertEqual(post["title"], "Edited Example Post")
-        self.assertEqual(post["body"], "This has been edited")
+        # Verify the post was updated in the database
+        posts = session.query(models.Post).all()
+        self.assertEqual(len(posts), 1)
+
+        post = posts[0]
+        self.assertEqual(post.title, "Edited Example Post")
+        self.assertEqual(post.body, "This has been edited")
 
     def testUnsupportedMimetype(self):
         data = "<xml></xml>"
