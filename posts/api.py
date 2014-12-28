@@ -81,3 +81,29 @@ def post_get(id):
 	# Return the post as JSON
     data = json.dumps(post.as_dictionary())
     return Response(data, 200, mimetype="application/json")
+
+@app.route("/api/post/<int:id>", methods=["PUT"])
+@decorators.accept("application/json")
+def post_edit(id):
+    """ Edit an existing post """
+    # Get the querystring arguments
+    new_title = request.args.get("title")
+    new_body = request.args.get("body")
+
+    # Get the post from the database
+    post = session.query(models.Post).get(id)
+
+    # Update the post with the new data
+    if new_title:
+        post.title = new_title
+    if new_body:
+        post.body = new_body
+
+    # Update the post to the database
+    session.add(post)
+    session.commit()
+
+    # Return a 200 OK, containing the post as JSON 
+    data = json.dumps(post.as_dictionary())
+    return Response(data, 200, mimetype="application/json")
+   
