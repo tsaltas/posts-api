@@ -3,5 +3,5 @@ class DevelopmentConfig(object):
     DEBUG = True
 
 class TestingConfig(object):
-    DATABASE_URI = "sqlite://"
+    DATABASE_URI = "sqlite:///posts-testing.db"
     DEBUG = True
